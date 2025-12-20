@@ -313,7 +313,7 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
     for signal in peripheral.signals:
       for port, pins in signal.pinout.items():
         for pin in sorted(pins):
-          if first_signal and (signal.route is not None or len(signal.pinout) > 0):
+          if first_signal:
             lines.append("/**")
             lines.append(f" * @name {peripheral.name} pin selection macros")
             lines.append(" * @{")
