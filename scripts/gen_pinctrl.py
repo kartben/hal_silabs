@@ -286,8 +286,15 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
   # Emit generic peripheral macros
   for peripheral in peripherals.values():
     have_content = False
+    first_signal = True
     for signal in peripheral.signals:
       if signal.route is not None:
+        if first_signal:
+          lines.append("/**")
+          lines.append(f" * @name {peripheral.name} DBUS signal routing macros")
+          lines.append(" * @{")
+          lines.append(" */")
+          first_signal = False
         pad = peripheral.max_signal_len() - len(signal.name) + 1
         lines.append(f"#define SILABS_DBUS_{signal.display_name()}(port, pin){' ' * pad}"
                      f"SILABS_DBUS(port, pin, {peripheral.offset}, {int(signal.have_enable)}, "
@@ -296,14 +303,22 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
       else:
         print(f"WARN: No route register for {signal.display_name()}")
     if have_content:
+      lines.append("/** @} */")
       lines.append("")
 
   # Emit pin-specific macros using peripheral macros
   for peripheral in peripherals.values():
     have_content = False
+    first_signal = True
     for signal in peripheral.signals:
       for port, pins in signal.pinout.items():
         for pin in sorted(pins):
+          if first_signal:
+            lines.append("/**")
+            lines.append(f" * @name {peripheral.name} pin selection macros")
+            lines.append(" * @{")
+            lines.append(" */")
+            first_signal = False
           pad = peripheral.max_signal_len() - len(signal.name) + 3 - len(str(pin))
           if signal.route is not None:
             lines.append(f"#define {signal.display_name()}_P{chr(65 + port)}{pin}{' ' * pad}"
@@ -313,19 +328,26 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
                          f"SILABS_FIXED_ROUTE(0x{port:x}, 0x{pin:x}, {signal.offset}, {signal.enable})")
           have_content = True
     if have_content:
+      lines.append("/** @} */")
       lines.append("")
 
   # Emit analog buses
-  max_len = 0
-  for abus in abuses:
-    curr_len = len(abus["bus_name"]) + len(abus["peripheral"])
-    if curr_len > max_len:
-      max_len = curr_len
-  for abus in abuses:
-    curr_len = len(abus["bus_name"]) + len(abus["peripheral"])
-    lines.append(f"#define ABUS_{abus['bus_name']}_{abus['peripheral']}{' ' * (max_len - curr_len + 1)}"
-                 f"SILABS_ABUS(0x{abus['base_offset']:x}, 0x{abus['parity']:x}, 0x{abus['value']:x})")
-  lines.append("")
+  if abuses:
+    lines.append("/**")
+    lines.append(" * @name Analog Bus (ABUS) allocation macros")
+    lines.append(" * @{")
+    lines.append(" */")
+    max_len = 0
+    for abus in abuses:
+      curr_len = len(abus["bus_name"]) + len(abus["peripheral"])
+      if curr_len > max_len:
+        max_len = curr_len
+    for abus in abuses:
+      curr_len = len(abus["bus_name"]) + len(abus["peripheral"])
+      lines.append(f"#define ABUS_{abus['bus_name']}_{abus['peripheral']}{' ' * (max_len - curr_len + 1)}"
+                   f"SILABS_ABUS(0x{abus['base_offset']:x}, 0x{abus['parity']:x}, 0x{abus['value']:x})")
+    lines.append("/** @} */")
+    lines.append("")
 
   lines.append(f"#endif /* ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_{family.upper()}_PINCTRL_H_ */")
   lines.append("")
