@@ -56,24 +56,32 @@ if __name__ == "__main__":
 
         if m := re.match(r"#define (_ACMP_INPUTCTRL_POSSEL_(?!SHIFT)(?!MASK)(?!DEFAULT).*)\s+(\dx[\dABCDEF]+)", line):
           input_value = hex(int(m.group(2),16))
-          input_name = f"#define ACMP_INPUT_{m.group(1).split('_')[-1]}"
+          input_short_name = m.group(1).split('_')[-1]
+          input_name = f"#define ACMP_INPUT_{input_short_name}"
           # Detect any input definition collisions
           if (input_value in defines):
-              if ( input_name == defines[input_value] ):
-                  print(f"Inputs {input_name} and {defines[input_value]} share the same value {input_value}.")
-          defines.update({input_value : f"{input_name} {input_value}"})
+              if ( input_name == defines[input_value]["define"] ):
+                  print(f"Inputs {input_name} and {defines[input_value]['define']} share the same value {input_value}.")
+          defines.update({input_value : {"name": input_short_name, "define": f"{input_name} {input_value}"}})
 
         if m := re.match(r"#define (_ACMP_INPUTCTRL_NEGSEL_(?!SHIFT)(?!MASK)(?!DEFAULT).*)\s+(\dx[\dABCDEF]+)", line):
           input_value = hex(int(m.group(2),16))
-          input_name = f"#define ACMP_INPUT_{m.group(1).split('_')[-1]}"
+          input_short_name = m.group(1).split('_')[-1]
+          input_name = f"#define ACMP_INPUT_{input_short_name}"
           # Detect any input definition collisions
           if (input_value in defines):
-              if ( input_name == defines[input_value] ):
-                  print(f"Inputs {input_name} and {defines[input_value]} share the same value {input_value}.")
-          defines.update({input_value : f"{input_name} {input_value}"})
+              if ( input_name == defines[input_value]["define"] ):
+                  print(f"Inputs {input_name} and {defines[input_value]['define']} share the same value {input_value}.")
+          defines.update({input_value : {"name": input_short_name, "define": f"{input_name} {input_value}"}})
 
   # Sort defines by key
   defines = dict(sorted(defines.items()))
+
+  # Generate define lines with doxygen comments
+  define_lines = []
+  for entry in defines.values():
+    define_lines.append(f"/** @brief ACMP input from {entry['name']} */")
+    define_lines.append(entry["define"])
 
   file = [
     "/**",
@@ -94,7 +102,9 @@ if __name__ == "__main__":
     " * @name ACMP Input Aliases",
     " * @{",
     " */",
+    "/** @brief ACMP input alias for VDAC0 output 0 */",
     f"#define ACMP_INPUT_VDACOUT0 ACMP_INPUT_VDAC0OUT0",
+    "/** @brief ACMP input alias for VDAC0 output 1 */",
     f"#define ACMP_INPUT_VDACOUT1 ACMP_INPUT_VDAC0OUT1",
     "/** @} */",
     "",
@@ -102,7 +112,7 @@ if __name__ == "__main__":
     " * @name ACMP Input Definitions",
     " * @{",
     " */",
-  ] + list(defines.values()) + [
+  ] + define_lines + [
     "",
     "/** @} */",
     "",

@@ -294,6 +294,7 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
     for signal in peripheral.signals:
       if signal.route is not None:
         pad = peripheral.max_signal_len() - len(signal.name) + 1
+        lines.append(f"/** @brief {signal.display_name()} signal routing macro */")
         lines.append(f"#define SILABS_DBUS_{signal.display_name()}(port, pin){' ' * pad}"
                      f"SILABS_DBUS(port, pin, {peripheral.offset}, {int(signal.have_enable)}, "
                      f"{signal.enable}, {signal.route})")
@@ -317,11 +318,14 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
       for port, pins in signal.pinout.items():
         for pin in sorted(pins):
           pad = peripheral.max_signal_len() - len(signal.name) + 3 - len(str(pin))
+          pin_name = f"P{chr(65 + port)}{pin}"
           if signal.route is not None:
-            lines.append(f"#define {signal.display_name()}_P{chr(65 + port)}{pin}{' ' * pad}"
+            lines.append(f"/** @brief {signal.display_name()} on {pin_name} */")
+            lines.append(f"#define {signal.display_name()}_{pin_name}{' ' * pad}"
                          f"SILABS_DBUS_{signal.display_name()}(0x{port:x}, 0x{pin:x})")
           else:
-            lines.append(f"#define {signal.display_name()}_P{chr(65 + port)}{pin}{' ' * pad}"
+            lines.append(f"/** @brief {signal.display_name()} on {pin_name} (fixed route) */")
+            lines.append(f"#define {signal.display_name()}_{pin_name}{' ' * pad}"
                          f"SILABS_FIXED_ROUTE(0x{port:x}, 0x{pin:x}, {signal.offset}, {signal.enable})")
           have_content = True
     if have_content:
@@ -342,6 +346,7 @@ def write_header(path: Path, family, peripherals: dict, abuses: list) -> None:
       max_len = curr_len
   for abus in abuses:
     curr_len = len(abus["bus_name"]) + len(abus["peripheral"])
+    lines.append(f"/** @brief Analog bus {abus['bus_name']} for {abus['peripheral']} */")
     lines.append(f"#define ABUS_{abus['bus_name']}_{abus['peripheral']}{' ' * (max_len - curr_len + 1)}"
                  f"SILABS_ABUS(0x{abus['base_offset']:x}, 0x{abus['parity']:x}, 0x{abus['value']:x})")
 

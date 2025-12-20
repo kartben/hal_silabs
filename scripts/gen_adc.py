@@ -176,6 +176,7 @@ if __name__ == "__main__":
 
   max_key = max(len(k) for k in values)
   for k, v in sorted(values.items(), key=lambda i: (i[1],i[0])):
+    file.append(f"/** @brief IADC input from {k} */")
     file.append(f"#define IADC_INPUT_{k}{' ' * (max_key - len(k) + 1)}0x{v:x}")
 
   file.append("")

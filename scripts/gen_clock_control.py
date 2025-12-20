@@ -82,8 +82,12 @@ if __name__ == "__main__":
         for line in f:
           if m := re.match(r".*uint32_t SL_BUS_(.*)_VALUE = \(([^\s]+).*(_CMU[^\s]+SHIFT)", line):
             try:
-              nodes.append(f"#define {m.group(1)}"
-                          f"{' ' * (20 - len(m.group(1)))}"
+              peripheral_name = m.group(1)
+              # Extract just the peripheral name without CLOCK_ prefix for the comment
+              short_name = peripheral_name.replace("CLOCK_", "") if peripheral_name.startswith("CLOCK_") else peripheral_name
+              nodes.append(f"/** @brief Clock enable for {short_name} peripheral */")
+              nodes.append(f"#define {peripheral_name}"
+                          f"{' ' * (20 - len(peripheral_name))}"
                           f"(FIELD_PREP(CLOCK_REG_MASK, {clocks[m.group(2)]}) | "
                           f"FIELD_PREP(CLOCK_BIT_MASK, {bits[m.group(3)]}))"
               )
@@ -91,6 +95,7 @@ if __name__ == "__main__":
               print(f"WARN: Failed to emit clock node: {e}")
     else:
       # xg21 has on-demand automatic clock requests, there are no enable bits
+      nodes.append("/** @brief Automatic clock enable (XG21 only) */")
       nodes.append("#define CLOCK_AUTO 0xFFFFFFFFUL")
 
     file = [

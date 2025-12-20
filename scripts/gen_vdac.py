@@ -90,6 +90,7 @@ if __name__ == "__main__":
 
   max_key = max(len(k) for k in values)
   for k, v in sorted(values.items(), key=lambda i: (i[1],i[0])):
+    file.append(f"/** @brief VDAC output to {k} */")
     file.append(f"#define VDAC_OUTPUT_{k}{' ' * (max_key - len(k) + 4)}0x{v:x}")
 
   file.append("")
