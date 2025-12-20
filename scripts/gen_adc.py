@@ -166,12 +166,17 @@ if __name__ == "__main__":
     f"#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_SILABS_ADC_H_",
     f"#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_SILABS_ADC_H_",
     "",
+    "/**",
+    " * @name IADC input selection macros",
+    " * @{",
+    " */",
   ]
 
   max_key = max(len(k) for k in values)
   for k, v in sorted(values.items(), key=lambda i: (i[1],i[0])):
     file.append(f"#define IADC_INPUT_{k}{' ' * (max_key - len(k) + 1)}0x{v:x}")
 
+  file.append("/** @} */")
   file.append("")
   file.append(f"#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_SILABS_ADC_H_ */")
   file.append("")
